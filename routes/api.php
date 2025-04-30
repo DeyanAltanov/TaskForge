@@ -1,0 +1,66 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Session\Middleware\StartSession;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+
+Route::middleware(['guest'])->group(function () {
+    Route::middleware([
+        EnsureFrontendRequestsAreStateful::class,
+        StartSession::class
+    ])->post('/login', function (Request $request) {
+        Log::channel('taskforge')->debug('🔥 LOGIN ROUTE hit', [
+            'cookies' => $request->cookies->all(),
+            'headers' => $request->headers->all(),
+            'session_id' => session()->getId(),
+            'session_data' => $request->hasSession() ? $request->session()->all() : 'no session',
+        ]);
+
+        return app(AuthController::class)->login($request);
+    });
+
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+Route::middleware([
+    EnsureFrontendRequestsAreStateful::class,
+    StartSession::class,
+    'auth:sanctum',
+])->group(function () {
+    Route::get('/user', function (Request $request) {
+        Log::channel('taskforge')->debug('🔥 /api/user hit', [
+            'auth_user' => $request->user(),
+            'session_id' => session()->getId(),
+            'cookies' => request()->cookies->all(),
+            'headers' => $request->headers->all(),
+        ]);
+
+        return $request->user();
+    });
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    Route::post('/logout', function (Request $request) {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['message' => 'Logged out']);
+    });
+});
+
+Route::get('/session-debug', function () {
+    Log::channel('taskforge')->debug('🧪 Session Debug', [
+        'session_id' => session()->getId(),
+        'cookies' => request()->cookies->all(),
+        'headers' => request()->headers->all(),
+        'user' => request()->user(),
+    ]);
+
+    return response()->json(['status' => 'ok']);
+});
