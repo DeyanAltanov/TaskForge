@@ -31,6 +31,7 @@ class RegisterRequest extends FormRequest
                 'regex:/[@$!%*#?&]/',
                 'confirmed',
             ],
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:512',
         ];
     }
 
@@ -61,6 +62,10 @@ class RegisterRequest extends FormRequest
             'password.max' => 'Password must not exceed 30 characters.',
             'password.regex' => 'Password must include uppercase, lowercase, number, and symbol.',
             'password.confirmed' => 'Password confirmation does not match.',
+
+            'profile_picture.image' => 'Profile picture must be an image.',
+            'profile_picture.mimes' => 'Profile picture must be a file of type: jpg, jpeg, png, gif, webp.',
+            'profile_picture.max' => 'Profile picture must not exceed 512KB.',
         ];
     }
 }

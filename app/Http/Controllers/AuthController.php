@@ -33,6 +33,25 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        if ($request->hasFile('profile_picture')) {
+            $file = $request->file('profile_picture');
+            $userId = auth()->id();
+            $timestamp = now()->format('Ymd_His');
+            $extension = $file->getClientOriginalExtension();
+
+            $filename = "{$userId}_{$timestamp}.{$extension}";
+            $path = public_path("uploads/avatars/{$userId}");
+
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+
+            $file->move($path, $filename);
+
+            $user->profile_picture = "uploads/avatars/{$userId}/{$filename}";
+            $user->save();
+        }
+
         Log::channel('taskforge')->info('✅ User created successfully!', $request->only('email'));
 
         return response()->json([
