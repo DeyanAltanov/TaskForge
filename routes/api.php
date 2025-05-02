@@ -33,14 +33,24 @@ Route::middleware([
     'auth:sanctum',
 ])->group(function () {
     Route::get('/user', function (Request $request) {
-        Log::channel('taskforge')->debug('🔥 /api/user hit', [
-            'auth_user' => $request->user(),
-            'session_id' => session()->getId(),
-            'cookies' => request()->cookies->all(),
-            'headers' => $request->headers->all(),
-        ]);
+        $user = $request->user();
 
-        return $request->user();
+        $path = public_path("uploads/avatars/{$user->id}/{$user->profile_picture}");
+        if (!file_exists($path)) {
+            $path = public_path("uploads/avatars/default.jpg");
+        }
+
+        $base64 = base64_encode(file_get_contents($path));
+        $mime = mime_content_type($path);
+        $avatarBase64 = "data:$mime;base64,$base64";
+
+        return response()->json([
+            'id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'avatar_base64' => $avatarBase64,
+        ]);
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
