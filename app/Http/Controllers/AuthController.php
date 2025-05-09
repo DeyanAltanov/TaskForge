@@ -35,20 +35,20 @@ class AuthController extends Controller
 
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
-            $userId = auth()->id();
+            $userId = $user->id;
             $timestamp = now()->format('Ymd_His');
             $extension = $file->getClientOriginalExtension();
 
             $filename = "{$userId}_{$timestamp}.{$extension}";
-            $path = public_path("uploads/avatars/{$userId}");
+            $directory = public_path("uploads/avatars/{$userId}");
 
-            if (!file_exists($path)) {
-                mkdir($path, 0755, true);
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
             }
 
-            $file->move($path, $filename);
+            $file->move($directory, $filename);
 
-            $user->profile_picture = "uploads/avatars/{$userId}/{$filename}";
+            $user->profile_picture = $filename;
             $user->save();
         }
 
