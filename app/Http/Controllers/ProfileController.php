@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class DashboardController extends Controller
+class ProfileController extends Controller
 {
-    public function index(Request $request)
+    public function myProfile(Request $request)
     {
         $user = $request->user();
 
@@ -20,7 +20,11 @@ class DashboardController extends Controller
         $mimeType = mime_content_type($path);
 
         return response()->json([
-            'first_name' => $user->first_name,
+            'first_name'      => $user->first_name,
+            'last_name'       => $user->last_name,
+            'email'           => $user->email,
+            'phone'           => $user->phone,
+            'gender'          => $user->gender,
             'profile_picture' => "data:$mimeType;base64,$imageData",
         ]);
     }

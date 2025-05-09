@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -42,18 +43,21 @@ Route::middleware([
 
         $base64 = base64_encode(file_get_contents($path));
         $mime = mime_content_type($path);
-        $avatarBase64 = "data:$mime;base64,$base64";
+        $profile_picture = "data:$mime;base64,$base64";
 
         return response()->json([
-            'id' => $user->id,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'email' => $user->email,
-            'avatar_base64' => $avatarBase64,
+            'id'              => $user->id,
+            'first_name'      => $user->first_name,
+            'last_name'       => $user->last_name,
+            'email'           => $user->email,
+            'gender'          => $user->gender,
+            'phone'           => $user->phone,
+            'profile_picture' => $profile_picture,
         ]);
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/profile', [ProfileController::class, 'index']);
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
