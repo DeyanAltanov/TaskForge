@@ -7,7 +7,6 @@ use App\Http\Requests\RegisterRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use App\Models\User;
 
@@ -26,20 +25,20 @@ class AuthController extends Controller
 
         $user = User::create([
             'first_name' => ucfirst(strtolower($validated['first_name'])),
-            'last_name' => ucfirst(strtolower($validated['last_name'])),
-            'email' => strtolower($validated['email']),
-            'phone' => $validated['phone'],
-            'gender' => strtolower($validated['gender']),
-            'password' => Hash::make($validated['password']),
+            'last_name'  => ucfirst(strtolower($validated['last_name'])),
+            'email'      => strtolower($validated['email']),
+            'phone'      => $validated['phone'],
+            'gender'     => strtolower($validated['gender']),
+            'password'   => Hash::make($validated['password']),
         ]);
 
         if ($request->hasFile('profile_picture')) {
-            $file = $request->file('profile_picture');
-            $userId = $user->id;
+            $file      = $request->file('profile_picture');
+            $userId    = $user->id;
             $timestamp = now()->format('Ymd_His');
             $extension = $file->getClientOriginalExtension();
 
-            $filename = "{$userId}_{$timestamp}.{$extension}";
+            $filename  = "{$userId}_{$timestamp}.{$extension}";
             $directory = public_path("uploads/avatars/{$userId}");
 
             if (!file_exists($directory)) {
@@ -55,7 +54,7 @@ class AuthController extends Controller
         Log::channel('taskforge')->info('✅ User created successfully!', $request->only('email'));
 
         return response()->json([
-            'message' => 'Registered successfully',
+            'message' => 'Registered successfully!',
             'redirect' => 'login',
         ]);
     }
@@ -66,7 +65,7 @@ class AuthController extends Controller
 
         try {
             $credentials = $request->validate([
-                'email' => 'required|email',
+                'email'    => 'required|email',
                 'password' => 'required',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

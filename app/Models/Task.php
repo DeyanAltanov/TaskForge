@@ -41,11 +41,17 @@ class Task extends Model
 		'status',
 		'priority',
 		'assigned_to',
-		'created_by'
+		'created_by',
+		'team_id',
 	];
 
 	public function user()
 	{
 		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function team()
+	{
+		return $this->belongsTo(Team::class);
 	}
 }
