@@ -15,7 +15,7 @@ class CreateTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'        => ['required', Rule::unique('teams', 'name')],
+            'name'        => ['required', 'string', Rule::unique('teams', 'name')],
             'description' => 'nullable'
         ];
     }
@@ -23,7 +23,8 @@ class CreateTeamRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Name is required.'
+            'name.required' => 'Name is required.',
+            'name.unique'   => 'A team with this name already exists.'
         ];
     }
 }

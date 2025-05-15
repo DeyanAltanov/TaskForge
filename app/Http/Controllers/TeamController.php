@@ -14,9 +14,16 @@ class TeamController extends Controller
     public function createTeam(CreateTeamRequest $request)
     {
         try{
+            $name = preg_replace('/[^a-zA-Z\s]/', '', $request->input('name'));
+            $name = ucwords(strtolower($name));
+
+            if (strlen($name) < 2) {
+                return response()->json(['errors' => ['name' => ['Invalid team name.']]], 422);
+            }
+
             $team = Team::create([
-                'name'         => $request->input('name'),
-                'description' => $request->input('description') ?? '',
+                'name'         => $name,
+                'description'  => $request->input('description') ?? '',
                 'created_by'   => $request->user()?->id
             ]);
         } catch(\Throwable $e){
@@ -26,8 +33,7 @@ class TeamController extends Controller
 
         return response()->json([
             'message'  => 'Team created successfully!',
-            'redirect' => 'dashboard',
-            'user' => $request->user()
+            'user'     => $request->user()
         ]);
     }
 }
