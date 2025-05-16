@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $created_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property int|null $team
  * 
  * @property User $user
  *
@@ -42,7 +43,7 @@ class Task extends Model
 		'priority',
 		'assigned_to',
 		'created_by',
-		'team_id',
+		'team',
 	];
 
 	public function user()

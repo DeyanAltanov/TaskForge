@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,9 +56,11 @@ Route::middleware([
             'profile_picture' => $profile_picture,
         ]);
     });
+    Route::get('/tasks/form-data', [TaskController::class, 'formData']);
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::post('/create_team', [TeamController::class, 'createTeam']);
+    Route::post('/create_task', [TaskController::class, 'createTask']);
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();

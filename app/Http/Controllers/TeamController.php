@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Http\Requests\CreateTeamRequest;
 use App\Models\Team;
 use Illuminate\Support\Facades\Log;
-use App\Models\User;
 
 class TeamController extends Controller
 {
@@ -21,7 +19,7 @@ class TeamController extends Controller
                 return response()->json(['errors' => ['name' => ['Invalid team name.']]], 422);
             }
 
-            $team = Team::create([
+            Team::create([
                 'name'         => $name,
                 'description'  => $request->input('description') ?? '',
                 'created_by'   => $request->user()?->id
