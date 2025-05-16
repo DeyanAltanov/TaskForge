@@ -14,8 +14,6 @@ class CreateTaskRequest extends FormRequest
 
     public function rules(): array
     {
-        Log::channel('taskforge')->info('🧪 Request team value:', ['team' => $this->input('team')]);
-        Log::channel('taskforge')->info('🧪 Request user value:', ['assigned_to' => $this->input('assigned_to')]);
         return [
             'title'       => 'required|string',
             'description' => 'required|string',
@@ -31,7 +29,7 @@ class CreateTaskRequest extends FormRequest
             'title.required'       => 'Title is required.',
             'description.required' => 'Description is required.',
             'priority.required'    => 'Please select a priority.',
-            'team.required'        => 'The task must to be assigned to a team.',
+            'team.exists'          => 'The task must to be assigned to a team.',
         ];
     }
 }
