@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateTeamRequest;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class TeamController extends Controller
@@ -32,6 +33,13 @@ class TeamController extends Controller
         return response()->json([
             'message'  => 'Team created successfully!',
             'user'     => $request->user()
+        ]);
+    }
+
+    public function allTeams(){
+        return response()->json([
+            'teams' => Team::select('id', 'name')->get(),
+            'users' => User::select('id', 'first_name', 'last_name')->get()
         ]);
     }
 }
