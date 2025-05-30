@@ -60,7 +60,7 @@ Route::middleware([
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::post('/create_team', [TeamController::class, 'createTeam']);
-    Route::post('/edit_team', [TeamController::class, 'editTeam']);
+    Route::match(['get', 'post'], '/teams/{id}/edit', [TeamController::class, 'editTeam']);
     Route::get('/all_teams', [TeamController::class, 'allTeams']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
 
