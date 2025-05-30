@@ -36,12 +36,18 @@ class Team extends Model
 	protected $fillable = [
 		'name',
 		'description',
-		'created_by'
+		'created_by',
+		'updated_by'
 	];
 
-	public function user()
+	public function createdBy()
 	{
 		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function updatedBy()
+	{
+		return $this->belongsTo(User::class, 'updated_by');
 	}
 
 	public function team_members()
