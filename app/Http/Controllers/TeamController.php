@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateTeamRequest;
 use Illuminate\Http\Request;
 use App\Models\Team;
+use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -67,5 +68,45 @@ class TeamController extends Controller
         }
 
         return response()->json($team);
+    }
+
+    public function editTeamMembers(Request $request, $team_id)
+    {
+        try {
+            if ($request->isMethod('get')) {
+                $team = Team::with('team_members.user')->findOrFail($team_id);
+
+                return response()->json([
+                    'team_name' => $team->name,
+                    'members' => $team->team_members->map(function ($member) {
+                        return [
+                            'id' => $member->user->id,
+                            'name' => $member->user->first_name . ' ' . $member->user->last_name,
+                            'email' => $member->user->email,
+                            'role' => $member->role,
+                        ];
+                    }),
+                ]);
+            }
+
+            if ($request->isMethod('post')) {
+                $query = $request->input('query');
+
+                $teamMemberIds = TeamMember::where('team_id', $team_id)->pluck('user_id');
+
+                $users = User::whereNotIn('id', $teamMemberIds)
+                    ->where(function ($q) use ($query) {
+                        $q->where('first_name', 'like', "%$query%")
+                          ->orWhere('last_name', 'like', "%$query%");
+                    })
+                    ->limit(10)
+                    ->get(['id', 'first_name', 'last_name', 'email']);
+
+                return response()->json($users);
+            }
+        } catch (\Throwable $e) {
+            Log::channel('taskforge')->error('Error while getting team members data: ' . $e->getMessage());
+            return response()->json(['error' => 'Server error'], 500);
+        }
     }
 }
