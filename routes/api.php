@@ -63,6 +63,8 @@ Route::middleware([
     Route::match(['get', 'post'], '/teams/{id}/edit', [TeamController::class, 'editTeam']);
     Route::match(['get', 'post'], '/teams/{id}/edit_team_members', [TeamController::class, 'editTeamMembers']);
     Route::get('/all_teams', [TeamController::class, 'allTeams']);
+    Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
+    Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
 
     Route::post('/logout', function (Request $request) {

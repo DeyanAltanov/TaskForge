@@ -109,4 +109,29 @@ class TeamController extends Controller
             return response()->json(['error' => 'Server error'], 500);
         }
     }
+
+    public function addMember(Request $request, $team_id)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'role'    => 'nullable|string|max:255'
+        ]);
+
+        TeamMember::create([
+            'team_id' => $team_id,
+            'user_id' => $validated['user_id'],
+            'role'    => $validated['role'] ?? null,
+        ]);
+
+        return response()->json(['message' => 'User added to team']);
+    }
+
+    public function removeMember($team_id, $user_id)
+    {
+        TeamMember::where('team_id', $team_id)
+                ->where('user_id', $user_id)
+                ->delete();
+
+        return response()->json(['message' => 'User removed']);
+    }
 }
