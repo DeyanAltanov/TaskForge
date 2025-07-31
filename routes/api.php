@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,6 +67,8 @@ Route::middleware([
     Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
     Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
+    Route::post('/users/search', [UserController::class, 'search']);
+
 
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();

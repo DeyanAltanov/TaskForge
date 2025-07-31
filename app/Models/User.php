@@ -71,9 +71,14 @@ class User extends Authenticatable implements AuthenticatableContract
 		return $this->hasMany(TeamMember::class);
 	}
 
-	public function teams()
+	public function createdTeams()
 	{
 		return $this->hasMany(Team::class, 'created_by');
+	}
+
+	public function teams()
+	{
+		return $this->belongsToMany(Team::class, 'team_members', 'user_id', 'team_id');
 	}
 
 	public function updates()

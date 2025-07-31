@@ -13,11 +13,11 @@ class TaskController extends Controller
 {
     public function createTask(CreateTaskRequest $request)
     {
-        try{
-            $title = preg_replace('/[^a-zA-Z\s]/', '', $request->input('title'));
-            $title = ucwords(strtolower($title));
-
-            if (strlen($title) < 2) {
+        try {
+            $title = trim($request->input('title'));
+            $title = mb_convert_case($title, MB_CASE_TITLE, "UTF-8");
+    
+            if (mb_strlen($title) < 2) {
                 return response()->json(['errors' => ['title' => ['Invalid task title.']]], 422);
             }
 
@@ -27,19 +27,18 @@ class TaskController extends Controller
                 'priority'    => $request->input('priority'),
                 'status'      => 'pending',
                 'assigned_to' => $request->filled('assigned_to') ? $request->input('assigned_to') : null,
-                'team'        => $request->input('team'),
-                'created_by'  => $request->user()?->id
-
+                'team'        => (int) $request->input('team'),
+                'created_by'  => $request->user()?->id,
             ]);
-        } catch(\Throwable $e){
+
+            return response()->json([
+                'message'  => 'Task created successfully!',
+                'user'     => $request->user()
+            ]);
+        } catch (\Throwable $e) {
             Log::channel('taskforge')->info('Task creation error: ' . $e->getMessage());
             return response()->json(['error' => 'Server error'], 500);
         }
-
-        return response()->json([
-            'message'  => 'Task created successfully!',
-            'user'     => $request->user()
-        ]);
     }
 
     public function formData()
