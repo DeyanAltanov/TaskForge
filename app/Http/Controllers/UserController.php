@@ -11,10 +11,17 @@ class UserController extends Controller
     {
         $query = $request->input('query');
 
+        $isNumericId = is_numeric($query);
+
+        if (strlen($query) < 3 && !$isNumericId) {
+            return response()->json([]);
+        }
+
         $users = User::where(function ($q) use ($query) {
                 $q->where('first_name', 'like', "%$query%")
                   ->orWhere('last_name', 'like', "%$query%")
-                  ->orWhere('email', 'like', "%$query%");
+                  ->orWhere('email', 'like', "%$query%")
+                  ->orWhere('id', 'like', "%$query%");
             })
             ->whereHas('teams')
             ->with('teams')
