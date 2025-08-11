@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateTaskRequest;
+use Illuminate\Http\Request;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
@@ -39,6 +40,51 @@ class TaskController extends Controller
             Log::channel('taskforge')->info('Task creation error: ' . $e->getMessage());
             return response()->json(['error' => 'Server error'], 500);
         }
+    }
+
+    public function allTasks(Request $request)
+    {
+        try {
+            $perPage = (int) $request->query('per_page', 12);
+            $page    = max(1, (int) $request->query('page', 1));
+
+            $sorts   = ['status', 'priority', 'team', 'created_at'];
+            $sortBy  = $request->query('sort_by');
+            $sortDir = strtolower($request->query('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+            $tasksQuery = Task::select(
+                    'id',
+                    'title',
+                    'description',
+                    'status',
+                    'priority',
+                    'assigned_to',
+                    'created_at',
+                    'team'
+                )
+                ->with([
+                    'team:id,name',
+                    'assigned_to:id,first_name,last_name',
+                ]);
+
+            if ($sortBy && in_array($sortBy, $sorts, true)) {
+                $tasksQuery->reorder()
+                           ->orderBy($sortBy, $sortDir)
+                           ->orderBy('id', 'asc');
+            } else {
+                $tasksQuery->reorder()
+                ->orderByRaw('assigned_to IS NULL DESC')
+                ->orderBy('priority', 'desc')
+                ->orderBy('id', 'asc');
+            }
+
+            $tasks = $tasksQuery->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json($tasks);
+        } catch (\Throwable $e) {
+            Log::channel('taskforge')->error('allTasks error', ['e' => $e->getMessage()]);
+            return response()->json(['message' => 'Server error'], 500);
+        }        
     }
 
     public function formData()

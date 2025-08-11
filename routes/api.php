@@ -57,8 +57,8 @@ Route::middleware([
             'profile_picture' => $profile_picture,
         ]);
     });
-    Route::get('/tasks/form-data', [TaskController::class, 'formData']);
 
+    Route::get('/tasks/form-data', [TaskController::class, 'formData']);
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::post('/create_team', [TeamController::class, 'createTeam']);
     Route::match(['get', 'post'], '/teams/{id}/edit', [TeamController::class, 'editTeam']);
@@ -67,9 +67,8 @@ Route::middleware([
     Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
     Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
+    Route::get('/all_tasks', [TaskController::class, 'allTasks']);
     Route::post('/users/search', [UserController::class, 'search']);
-
-
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();

@@ -50,7 +50,7 @@ class TeamController extends Controller
 
         if ($request->isMethod('post')) {
             $team = Team::findOrFail($team_id);
-    
+
             $validated = $request->validate([
                 'name'        => 'required|string|max:255',
                 'description' => 'nullable|string|max:500'
@@ -59,7 +59,7 @@ class TeamController extends Controller
             $validated['updated_by'] = $request->user()?->id;
 
             $team->update($validated);
-    
+
             return response()->json(['message' => 'Team updated', 'team' => $team]);
         }
 
