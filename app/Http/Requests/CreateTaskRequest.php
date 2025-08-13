@@ -15,7 +15,7 @@ class CreateTaskRequest extends FormRequest
     {
         return [
             'title'       => 'required|string',
-            'description' => 'required|string',
+            'description' => ['required', 'string', 'min:30'],
             'priority'    => 'required|in:low,medium,high,critical',
             'team'        => 'required|exists:teams,id',
             'assigned_to' => 'nullable|exists:users,id'
@@ -27,6 +27,7 @@ class CreateTaskRequest extends FormRequest
         return [
             'title.required'       => 'Title is required.',
             'description.required' => 'Description is required.',
+            'description.min'       => 'Description must be at least 30 characters.',
             'priority.required'    => 'Please select a priority.',
             'team.exists'          => 'The task must to be assigned to a team.',
         ];

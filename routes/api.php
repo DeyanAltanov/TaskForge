@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -67,8 +68,13 @@ Route::middleware([
     Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
     Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
-    Route::get('/all_tasks', [TaskController::class, 'allTasks']);
+    Route::get('/tasks/{user_id?}', [TaskController::class, 'tasks']);
+    Route::get('/task/{task_id?}', [TaskController::class, 'task']);
     Route::post('/users/search', [UserController::class, 'search']);
+    Route::get('/comments', [CommentController::class, 'comments']);
+    Route::post('/comments', [CommentController::class, 'create']);
+    Route::post('/comments/{comment}/change', [CommentController::class, 'change']);
+    Route::post('/comments/{comment}/reaction', [CommentController::class, 'reaction']);
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();

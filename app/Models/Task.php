@@ -7,6 +7,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $team
  * 
  * @property User $user
+ * @property Collection|Comment[] $comments
  *
  * @package App\Models
  */
@@ -59,4 +61,9 @@ class Task extends Model
 	{
 		return $this->belongsTo(User::class, 'created_by');
 	}
+
+	public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

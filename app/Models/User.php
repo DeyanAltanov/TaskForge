@@ -8,7 +8,6 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -32,6 +31,7 @@ use Illuminate\Notifications\Notifiable;
  * @property Collection|TeamMember[] $team_members
  * @property Collection|Team[] $teams
  * @property Collection|Update[] $updates
+ * @property Collection|Comment[] $comments
  *
  * @package App\Models
  */
@@ -85,4 +85,14 @@ class User extends Authenticatable implements AuthenticatableContract
 	{
 		return $this->hasMany(Update::class, 'updated_by');
 	}
+
+	public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+	public function reactions()
+    { 
+        return $this->hasMany(CommentReaction::class); 
+    }
 }

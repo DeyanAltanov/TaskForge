@@ -42,7 +42,24 @@ class TaskController extends Controller
         }
     }
 
-    public function allTasks(Request $request)
+    public function task(int $task_id)
+    {
+        $task = Task::select('id','title','description','status','priority','created_at','team','assigned_to')
+            ->with([
+                'team:id,name',
+                'assigned_to:id,first_name,last_name',
+                'comments' => function ($q) {
+                    $q->select('id','task_id','user_id','comment','created_at')
+                    ->orderBy('created_at','asc')
+                    ->with('user:id,first_name,last_name');
+                },
+            ])
+            ->findOrFail($task_id);
+
+        return response()->json($task);
+    }
+
+    public function tasks(Request $request, $user_id = null)
     {
         try {
             $perPage = (int) $request->query('per_page', 12);
@@ -67,15 +84,25 @@ class TaskController extends Controller
                     'assigned_to:id,first_name,last_name',
                 ]);
 
+            if (!empty($user_id)) {
+                $tasksQuery->where('assigned_to', $user_id);
+            }
+
             if ($sortBy && in_array($sortBy, $sorts, true)) {
                 $tasksQuery->reorder()
                            ->orderBy($sortBy, $sortDir)
                            ->orderBy('id', 'asc');
             } else {
-                $tasksQuery->reorder()
-                ->orderByRaw('assigned_to IS NULL DESC')
-                ->orderBy('priority', 'desc')
-                ->orderBy('id', 'asc');
+                if (empty($user_id)) {
+                    $tasksQuery->reorder()
+                               ->orderByRaw('assigned_to IS NULL DESC')
+                               ->orderBy('priority', 'desc')
+                               ->orderBy('id', 'asc');
+                } else {
+                    $tasksQuery->reorder()
+                               ->orderBy('priority', 'desc')
+                               ->orderBy('id', 'asc');
+                }
             }
 
             $tasks = $tasksQuery->paginate($perPage, ['*'], 'page', $page);
