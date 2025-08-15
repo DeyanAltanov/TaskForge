@@ -19,7 +19,7 @@ class CommentController extends Controller
             if ($taskId) {
                 $query = Comment::query()
                     ->where('task_id', $taskId)
-                    ->with(['user:id,first_name,last_name'])
+                    ->with(['user:id,first_name,last_name,profile_picture'])
                     ->withCount([
                         'reactions as likes_count'    => fn($query)=>$query->where('value',1),
                         'reactions as dislikes_count' => fn($query)=>$query->where('value',0),
@@ -44,7 +44,7 @@ class CommentController extends Controller
 
                 $comments = Comment::query()
                     ->where('user_id', $userId)
-                    ->with(['task:id,title','user:id,first_name,last_name'])
+                    ->with(['task:id,title','user:id,first_name,last_name,profile_picture'])
                     ->withCount([
                         'reactions as likes_count'    => fn($query)=>$query->where('value',1),
                         'reactions as dislikes_count' => fn($query)=>$query->where('value',0),

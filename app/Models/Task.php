@@ -57,7 +57,7 @@ class Task extends Model
 		return $this->belongsTo(User::class, 'assigned_to');
 	}
 
-	public function creator()
+	public function created_by()
 	{
 		return $this->belongsTo(User::class, 'created_by');
 	}
@@ -65,5 +65,10 @@ class Task extends Model
 	public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+	public function files()
+    {
+        return $this->hasMany(TaskFile::class);
     }
 }

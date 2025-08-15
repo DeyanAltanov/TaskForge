@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Class User
@@ -61,6 +62,32 @@ class User extends Authenticatable implements AuthenticatableContract
 		'remember_token'
 	];
 
+	public function getProfilePictureAttribute($value): ?string
+	{
+		$default = 'uploads/avatars/default.jpg';
+
+		if (!$value) {
+			return asset($default);
+		}
+
+		if (preg_match('~^https?://~i', $value)) {
+			return $value;
+		}
+
+		if (str_contains($value, '/')) {
+			$rel = ltrim($value, '/');
+			return asset($rel);
+		}
+
+		$path = 'uploads/avatars/' . $this->id . '/' . $value;
+
+		if (!file_exists(public_path($path))) {
+			return asset($default);
+		}
+
+		return asset($path);
+	}
+
 	public function tasks()
 	{
 		return $this->hasMany(Task::class, 'created_by');
@@ -94,5 +121,10 @@ class User extends Authenticatable implements AuthenticatableContract
 	public function reactions()
     { 
         return $this->hasMany(CommentReaction::class); 
+    }
+
+	public function files()
+    {
+        return $this->hasMany(TaskFile::class);
     }
 }
