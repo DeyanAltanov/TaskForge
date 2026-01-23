@@ -36,17 +36,8 @@ Route::middleware([
     StartSession::class,
     'auth:sanctum',
 ])->group(function () {
-    Route::get('/user', function (Request $request) {
+    Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         $user = $request->user();
-
-        $path = public_path("uploads/avatars/{$user->id}/{$user->profile_picture}");
-        if (!file_exists($path)) {
-            $path = public_path("uploads/avatars/default.jpg");
-        }
-
-        $base64 = base64_encode(file_get_contents($path));
-        $mime = mime_content_type($path);
-        $profile_picture = "data:$mime;base64,$base64";
 
         return response()->json([
             'id'              => $user->id,
@@ -55,7 +46,7 @@ Route::middleware([
             'email'           => $user->email,
             'gender'          => $user->gender,
             'phone'           => $user->phone,
-            'profile_picture' => $profile_picture,
+            'profile_picture' => $user->profile_picture,
         ]);
     });
 
@@ -68,6 +59,7 @@ Route::middleware([
     Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
     Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
+    Route::patch('/task/{task_id}', [TaskController::class, 'updateTask']);
     Route::get('/tasks/{user_id?}', [TaskController::class, 'tasks']);
     Route::get('/task/{task_id?}', [TaskController::class, 'task']);
     Route::post('/users/search', [UserController::class, 'search']);

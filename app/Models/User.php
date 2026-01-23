@@ -76,16 +76,15 @@ class User extends Authenticatable implements AuthenticatableContract
 
 		if (str_contains($value, '/')) {
 			$rel = ltrim($value, '/');
-			return asset($rel);
+		} else {
+			$rel = "uploads/avatars/{$this->id}/{$value}";
 		}
 
-		$path = 'uploads/avatars/' . $this->id . '/' . $value;
-
-		if (!file_exists(public_path($path))) {
-			return asset($default);
+		if (!file_exists(public_path($rel))) {
+			$rel = $default;
 		}
 
-		return asset($path);
+		return asset($rel);
 	}
 
 	public function tasks()

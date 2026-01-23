@@ -31,7 +31,7 @@ class TaskController extends Controller
                 'title'       => $title,
                 'description' => $request->input('description'),
                 'priority'    => $request->input('priority'),
-                'status'      => 'pending',
+                'status'      => $request->filled('assigned_to') ? 'pending' : 'unassigned',
                 'assigned_to' => $request->filled('assigned_to') ? $request->input('assigned_to') : null,
                 'team'        => (int) $request->input('team'),
                 'created_by'  => $request->user()->id,
@@ -107,6 +107,56 @@ class TaskController extends Controller
             return response()->json(['message' => 'Server error.'], 500);
         }
     }
+
+    public function update(Request $request, int $id)
+    {
+        try {
+            $data = $request->validate([
+                'assigned_to' => 'nullable|integer|exists:users,id',
+                'team'        => 'nullable|integer|exists:teams,id',
+                'status'      => 'nullable|string|in:unassigned,pending,in_progress,blocked,for_review,completed',
+                'priority'    => 'nullable|string|in:low,medium,high,critical',
+            ]);
+
+            $task = Task::findOrFail($id);
+
+            $assignedBefore = $task->assigned_to;
+
+            if (array_key_exists('team', $data)) {
+                $task->team = $data['team'];
+            }
+
+            if (array_key_exists('priority', $data)) {
+                $task->priority = $data['priority'];
+            }
+
+            if (array_key_exists('assigned_to', $data)) {
+                $task->assigned_to = $data['assigned_to'];
+            }
+
+            if (array_key_exists('status', $data)) {
+                $task->status = $data['status'];
+            } else {
+                if (array_key_exists('assigned_to', $data)) {
+                    if ($assignedBefore === null && $data['assigned_to'] !== null) {
+                        $task->status = 'pending';
+                    } elseif ($assignedBefore !== null && $data['assigned_to'] === null) {
+                        $task->status = 'unassigned';
+                    }
+                }
+            }
+
+            $task->save();
+
+            $task->load(['team','assigned_to','created_by','files']);
+
+            return response()->json($task);
+
+        } catch (\Throwable $e) {
+            Log::channel('taskforge')->error('updateTask error: '.$e->getMessage());
+            return response()->json(['message' => 'Update failed'], 422);
+        }
+    }    
 
     public function tasks(Request $request, $user_id = null)
     {
