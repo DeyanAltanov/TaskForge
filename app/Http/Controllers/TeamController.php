@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Models\Task;
 use Illuminate\Support\Facades\Log;
 
 class TeamController extends Controller
@@ -43,6 +44,85 @@ class TeamController extends Controller
             'teams' => Team::select('id', 'name')->get(),
             'users' => User::select('id', 'first_name', 'last_name')->get()
         ]);
+    }
+
+    public function myTeams(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $teams = $user->teams()
+                ->select('teams.id', 'teams.name')
+                ->orderBy('teams.name')
+                ->get();
+
+            return response()->json(['teams' => $teams]);
+        } catch (\Throwable $e) {
+            Log::channel('taskforge')->error('myTeams error', ['e' => $e->getMessage()]);
+            return response()->json(['message' => 'Server error'], 500);
+        }
+    }
+
+    public function teamBoard(Request $request, int $teamId)
+    {
+        try {
+            $user = $request->user();
+
+            $isMember = $user->teams()->where('teams.id', $teamId)->exists();
+
+            if (!$isMember) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+
+            $team = Team::select('id', 'name')
+                ->with(['members:id,first_name,last_name'])
+                ->findOrFail($teamId);
+
+            $memberIds = $team->members->pluck('id')->values();
+
+            $tasks = Task::select('id', 'title', 'description', 'status', 'priority', 'assigned_to', 'team')
+                ->where('team', $teamId)
+                ->whereIn('assigned_to', $memberIds)
+                ->orderBy('priority', 'desc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->groupBy('assigned_to')
+                ->map(fn($rows) => $rows->map(fn($t) => [
+                    'id' => $t->id,
+                    'title' => $t->title,
+                    'description' => $t->description,
+                    'status' => $t->status,
+                    'priority' => $t->priority,
+                ])->values());
+
+            $unassigned = Task::select('id', 'title', 'description', 'status', 'priority', 'team')
+                ->where('team', $teamId)
+                ->whereNull('assigned_to')
+                ->orderBy('priority', 'desc')
+                ->orderBy('id', 'asc')
+                ->get()
+                ->map(fn($t) => [
+                    'id' => $t->id,
+                    'title' => $t->title,
+                    'description' => $t->description,
+                    'status' => $t->status,
+                    'priority' => $t->priority,
+                ])->values();
+
+            return response()->json([
+                'team' => ['id' => $team->id, 'name' => $team->name],
+                'members' => $team->members->map(fn($m) => [
+                    'id' => $m->id,
+                    'first_name' => $m->first_name,
+                    'last_name' => $m->last_name,
+                ])->values(),
+                'tasksByUser' => $tasks,
+                'unassigned' => $unassigned,
+            ]);
+        } catch (\Throwable $e) {
+            Log::channel('taskforge')->error('teamBoard error', ['e' => $e->getMessage()]);
+            return response()->json(['message' => 'Server error'], 500);
+        }
     }
 
     public function editTeam(Request $request, $team_id){

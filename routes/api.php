@@ -58,6 +58,8 @@ Route::middleware([
     Route::get('/all_teams', [TeamController::class, 'allTeams']);
     Route::post('/teams/{id}/members', [TeamController::class, 'addMember']);
     Route::delete('teams/{team_id}/members/{user_id}', [TeamController::class,'removeMember']);
+    Route::get('/teams/my', [TeamController::class, 'myTeams']);
+    Route::get('/teams/{team_id}/board', [TeamController::class, 'teamBoard']);
     Route::post('/create_task', [TaskController::class, 'createTask']);
     Route::patch('/task/{task_id}', [TaskController::class, 'updateTask']);
     Route::get('/tasks/{user_id?}', [TaskController::class, 'tasks']);
