@@ -51,8 +51,10 @@ class TeamController extends Controller
         try {
             $user = $request->user();
 
-            $teams = $user->teams()
+            $teams = Team::query()
                 ->select('teams.id', 'teams.name')
+                ->join('team_members', 'team_members.team_id', '=', 'teams.id')
+                ->where('team_members.user_id', $user->id)
                 ->orderBy('teams.name')
                 ->get();
 
@@ -63,25 +65,39 @@ class TeamController extends Controller
         }
     }
 
-    public function teamBoard(Request $request, int $teamId)
+    public function teamBoard(Request $request, int $team_id)
     {
         try {
             $user = $request->user();
 
-            $isMember = $user->teams()->where('teams.id', $teamId)->exists();
+            $isMember = TeamMember::where('team_id', $team_id)
+                ->where('user_id', $user->id)
+                ->exists();
 
             if (!$isMember) {
                 return response()->json(['message' => 'Forbidden'], 403);
             }
 
-            $team = Team::select('id', 'name')
-                ->with(['members:id,first_name,last_name'])
-                ->findOrFail($teamId);
+            $team = Team::select('id', 'name')->findOrFail($team_id);
 
-            $memberIds = $team->members->pluck('id')->values();
+            $members = TeamMember::query()
+                ->where('team_id', $team_id)
+                ->with(['user:id,first_name,last_name,profile_picture'])
+                ->get()
+                ->map(fn($tm) => [
+                    'id' => $tm->user?->id,
+                    'first_name' => $tm->user?->first_name,
+                    'last_name' => $tm->user?->last_name,
+                    'profile_picture' => $tm->user?->profile_picture,
+                ])
+                ->filter(fn($m) => !empty($m['id']))
+                ->values();
 
-            $tasks = Task::select('id', 'title', 'description', 'status', 'priority', 'assigned_to', 'team')
-                ->where('team', $teamId)
+            $memberIds = $members->pluck('id')->values();
+
+            $tasksByUser = Task::query()
+                ->select('id', 'title', 'description', 'status', 'priority', 'assigned_to', 'team','created_at')
+                ->where('team', $team_id)
                 ->whereIn('assigned_to', $memberIds)
                 ->orderBy('priority', 'desc')
                 ->orderBy('id', 'asc')
@@ -90,13 +106,15 @@ class TeamController extends Controller
                 ->map(fn($rows) => $rows->map(fn($t) => [
                     'id' => $t->id,
                     'title' => $t->title,
+                    'created_at' => $t->created_at,
                     'description' => $t->description,
                     'status' => $t->status,
                     'priority' => $t->priority,
                 ])->values());
 
-            $unassigned = Task::select('id', 'title', 'description', 'status', 'priority', 'team')
-                ->where('team', $teamId)
+            $unassigned = Task::query()
+                ->select('id', 'title', 'description', 'status', 'priority', 'team','created_at')
+                ->where('team', $team_id)
                 ->whereNull('assigned_to')
                 ->orderBy('priority', 'desc')
                 ->orderBy('id', 'asc')
@@ -104,6 +122,7 @@ class TeamController extends Controller
                 ->map(fn($t) => [
                     'id' => $t->id,
                     'title' => $t->title,
+                    'created_at' => $t->created_at,
                     'description' => $t->description,
                     'status' => $t->status,
                     'priority' => $t->priority,
@@ -111,12 +130,8 @@ class TeamController extends Controller
 
             return response()->json([
                 'team' => ['id' => $team->id, 'name' => $team->name],
-                'members' => $team->members->map(fn($m) => [
-                    'id' => $m->id,
-                    'first_name' => $m->first_name,
-                    'last_name' => $m->last_name,
-                ])->values(),
-                'tasksByUser' => $tasks,
+                'members' => $members,
+                'tasksByUser' => $tasksByUser,
                 'unassigned' => $unassigned,
             ]);
         } catch (\Throwable $e) {
