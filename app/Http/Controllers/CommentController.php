@@ -28,7 +28,7 @@ class CommentController extends Controller
                         ->where('user_id',$authId)]);
 
                 $page = (int)($request->query('page') ?? 1);
-                $result = $query->orderByDesc('id')->paginate(10, ['*'], 'page', $page);
+                $result = $query->orderByDesc('id')->paginate(6, ['*'], 'page', $page);
 
                 $result->getCollection()->transform(function($comments){
                     $comments->my_reaction = optional($comments->reactions->first())->value;
@@ -50,7 +50,7 @@ class CommentController extends Controller
                         'reactions as dislikes_count' => fn($query)=>$query->where('value',0),
                     ])
                     ->orderByDesc('id')
-                    ->paginate(10, ['*'], 'page', $page);
+                    ->paginate(6, ['*'], 'page', $page);
 
                 $reactions = CommentReaction::query()
                     ->where('user_id', $userId)

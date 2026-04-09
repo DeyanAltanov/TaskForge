@@ -7,6 +7,8 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\OnlineStatusController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -69,6 +71,13 @@ Route::middleware([
     Route::post('/comments', [CommentController::class, 'create']);
     Route::post('/comments/{comment}/change', [CommentController::class, 'change']);
     Route::post('/comments/{comment}/reaction', [CommentController::class, 'reaction']);
+    Route::post('/online/ping', [OnlineStatusController::class, 'ping']);
+    Route::get('/online/my-teams', [OnlineStatusController::class, 'myTeamsOnline']);
+    Route::get('/chat/conversations', [ChatController::class, 'conversations']);
+    Route::post('/chat/dm', [ChatController::class, 'dm']);
+    Route::get('/chat/conversations/{conversation_id}/messages', [ChatController::class, 'messages']);
+    Route::post('/chat/conversations/{conversation_id}/messages', [ChatController::class, 'send']);
+    Route::post('/chat/conversations/{conversation_id}/seen', [ChatController::class, 'seen']);
     Route::post('/logout', function (Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();

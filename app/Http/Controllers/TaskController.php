@@ -31,7 +31,7 @@ class TaskController extends Controller
                 'title'       => $title,
                 'description' => $request->input('description'),
                 'priority'    => $request->input('priority'),
-                'status'      => $request->filled('assigned_to') ? 'pending' : 'unassigned',
+                'status'      => $request->filled('assigned_to') ? 'new' : 'unassigned',
                 'assigned_to' => $request->filled('assigned_to') ? $request->input('assigned_to') : null,
                 'team'        => (int) $request->input('team'),
                 'created_by'  => $request->user()->id,
@@ -108,19 +108,31 @@ class TaskController extends Controller
         }
     }
 
-    public function update(Request $request, int $id)
+    public function updateTask(Request $request, int $id)
     {
         try {
             $data = $request->validate([
-                'assigned_to' => 'nullable|integer|exists:users,id',
-                'team'        => 'nullable|integer|exists:teams,id',
-                'status'      => 'nullable|string|in:unassigned,pending,in_progress,blocked,for_review,completed',
-                'priority'    => 'nullable|string|in:low,medium,high,critical',
+                'title'        => 'nullable|string|max:255',
+                'description'  => 'nullable|string',
+                'assigned_to'  => 'nullable|integer|exists:users,id',
+                'team'         => 'nullable|integer|exists:teams,id',
+                'status'       => 'nullable|string|in:unassigned,new,pending,in_progress,blocked,for_review,completed,closed',
+                'priority'     => 'nullable|string|in:low,medium,high,critical',
+                'closure_note' => 'nullable|string|min:20',
             ]);
 
             $task = Task::findOrFail($id);
 
             $assignedBefore = $task->assigned_to;
+            $statusBefore   = $task->status;
+
+            if (array_key_exists('title', $data)) {
+                $task->title = $data['title'];
+            }
+
+            if (array_key_exists('description', $data)) {
+                $task->description = $data['description'];
+            }
 
             if (array_key_exists('team', $data)) {
                 $task->team = $data['team'];
@@ -136,27 +148,49 @@ class TaskController extends Controller
 
             if (array_key_exists('status', $data)) {
                 $task->status = $data['status'];
+            }
+
+            if ($task->status === 'closed') {
+                if (
+                    !array_key_exists('closure_note', $data) ||
+                    !is_string($data['closure_note']) ||
+                    mb_strlen(trim($data['closure_note'])) < 20
+                ) {
+                    return response()->json([
+                        'message' => 'Closure note must be at least 20 characters when closing a task.',
+                        'errors' => [
+                            'closure_note' => [
+                                'Closure note must be at least 20 characters when closing a task.'
+                            ]
+                        ]
+                    ], 422);
+                }
+
+                $task->closure_note = trim($data['closure_note']);
+                $task->closed_by = $request->user()->id;
             } else {
-                if (array_key_exists('assigned_to', $data)) {
-                    if ($assignedBefore === null && $data['assigned_to'] !== null) {
-                        $task->status = 'pending';
-                    } elseif ($assignedBefore !== null && $data['assigned_to'] === null) {
-                        $task->status = 'unassigned';
-                    }
+                if ($statusBefore === 'closed') {
+                    $task->closed_by = null;
+                    $task->closure_note = null;
                 }
             }
 
+            $this->normalizeTaskAssignmentAndStatus($task, $data, $assignedBefore);
+
             $task->save();
 
-            $task->load(['team','assigned_to','created_by','files']);
+            $task->load(['team', 'assigned_to', 'created_by', 'closed_by', 'files']);
 
             return response()->json($task);
 
         } catch (\Throwable $e) {
             Log::channel('taskforge')->error('updateTask error: '.$e->getMessage());
-            return response()->json(['message' => 'Update failed'], 422);
+
+            return response()->json([
+                'message' => 'Update failed'
+            ], 422);
         }
-    }    
+    }
 
     public function tasks(Request $request, $user_id = null)
     {
@@ -194,23 +228,83 @@ class TaskController extends Controller
             } else {
                 if (empty($user_id)) {
                     $tasksQuery->reorder()
-                               ->orderByRaw('assigned_to IS NULL DESC')
-                               ->orderBy('priority', 'desc')
-                               ->orderBy('id', 'asc');
+                        ->orderByRaw("
+                            CASE
+                                WHEN priority = 'critical' AND assigned_to IS NULL THEN 1
+                                WHEN priority = 'critical' AND assigned_to IS NOT NULL THEN 2
+                                WHEN priority = 'high' AND assigned_to IS NULL THEN 3
+                                WHEN priority = 'high' AND assigned_to IS NOT NULL THEN 4
+                                WHEN assigned_to IS NULL THEN 5
+                                ELSE 6
+                            END ASC
+                        ")
+                        ->orderBy('created_at', 'desc')
+                        ->orderBy('id', 'desc');
                 } else {
                     $tasksQuery->reorder()
-                               ->orderBy('priority', 'desc')
-                               ->orderBy('id', 'asc');
+                        ->orderByRaw("
+                            CASE priority
+                                WHEN 'critical' THEN 1
+                                WHEN 'high' THEN 2
+                                WHEN 'medium' THEN 3
+                                WHEN 'low' THEN 4
+                                ELSE 5
+                            END ASC
+                        ")
+                        ->orderBy('created_at', 'desc')
+                        ->orderBy('id', 'desc');
                 }
             }
 
             $tasks = $tasksQuery->paginate($perPage, ['*'], 'page', $page);
+
+            $tasks->getCollection()->transform(function ($task) {
+                $task->status_label = ucwords(str_replace('_', ' ', $task->status));
+                return $task;
+            });
 
             return response()->json($tasks);
         } catch (\Throwable $e) {
             Log::channel('taskforge')->error('allTasks error', ['e' => $e->getMessage()]);
             return response()->json(['message' => 'Server error'], 500);
         }        
+    }
+
+    private function normalizeTaskAssignmentAndStatus(Task $task, array $data, $assignedBefore = null): void
+    {
+        $hasStatus = array_key_exists('status', $data);
+        $hasAssignedTo = array_key_exists('assigned_to', $data);
+
+        if ($hasStatus && $data['status'] === 'unassigned') {
+            $task->status = 'unassigned';
+            $task->assigned_to = null;
+            return;
+        }
+
+        if (
+            array_key_exists('assigned_to', $data) &&
+            $assignedBefore !== null &&
+            $task->assigned_to !== null &&
+            (int) $assignedBefore !== (int) $task->assigned_to
+        ) {
+            $task->status = 'new';
+        }
+
+        if ($hasAssignedTo) {
+            if ($data['assigned_to'] === null) {
+                $task->assigned_to = null;
+                $task->status = 'unassigned';
+                return;
+            }
+
+            if ($assignedBefore === null || $task->status === 'unassigned') {
+                $task->status = 'new';
+            }
+        }
+
+        if ($task->assigned_to === null && $task->status !== 'unassigned') {
+            $task->status = 'unassigned';
+        }
     }
 
     public function formData()

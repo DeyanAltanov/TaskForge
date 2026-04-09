@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $priority
  * @property int|null $assigned_to
  * @property int $created_by
+ * @property int $closed_by
+ * @property string|null $closure_note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property int|null $team
@@ -35,7 +37,8 @@ class Task extends Model
 
 	protected $casts = [
 		'assigned_to' => 'int',
-		'created_by' => 'int'
+		'created_by' => 'int',
+		'closed_by' => 'int',
 	];
 
 	protected $fillable = [
@@ -46,6 +49,8 @@ class Task extends Model
 		'assigned_to',
 		'created_by',
 		'team',
+		'closed_by',
+		'closure_note',
 	];
 
 	public function team()
@@ -60,6 +65,11 @@ class Task extends Model
 	public function created_by()
 	{
 		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function closed_by()
+	{
+		return $this->belongsTo(User::class, 'closed_by');
 	}
 
 	public function comments()

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Class User
@@ -23,6 +22,7 @@ use Illuminate\Support\Facades\Log;
  * @property string $phone
  * @property string $gender
  * @property Carbon|null $email_verified_at
+ * @property Carbon|null $last_seen_at
  * @property string $password
  * @property string|null $remember_token
  * @property Carbon|null $created_at
@@ -33,6 +33,8 @@ use Illuminate\Support\Facades\Log;
  * @property Collection|Team[] $teams
  * @property Collection|Update[] $updates
  * @property Collection|Comment[] $comments
+ * @property Collection|ConversationParticipant[] $conversation_participants
+ * @property Collection|Message[] $messages
  *
  * @package App\Models
  */
@@ -43,7 +45,8 @@ class User extends Authenticatable implements AuthenticatableContract
 	protected $table = 'users';
 
 	protected $casts = [
-		'email_verified_at' => 'datetime'
+		'email_verified_at' => 'datetime',
+		'last_seen_at' 		=> 'datetime'
 	];
 
 	protected $hidden = [
@@ -126,4 +129,14 @@ class User extends Authenticatable implements AuthenticatableContract
     {
         return $this->hasMany(TaskFile::class);
     }
+
+	public function conversationParticipants()
+	{
+		return $this->hasMany(ConversationParticipant::class, 'user_id');
+	}
+
+	public function sentMessages()
+	{
+		return $this->hasMany(Message::class, 'sender_id');
+	}
 }
