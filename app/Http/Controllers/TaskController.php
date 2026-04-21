@@ -122,7 +122,6 @@ class TaskController extends Controller
             ]);
 
             $task = Task::findOrFail($id);
-
             $assignedBefore = $task->assigned_to;
             $statusBefore   = $task->status;
 
@@ -148,6 +147,23 @@ class TaskController extends Controller
 
             if (array_key_exists('status', $data)) {
                 $task->status = $data['status'];
+            }
+
+            $restrictedStatuses = ['for_review', 'completed', 'closed'];
+
+            if (
+                $task->status !== $statusBefore &&
+                in_array($task->status, $restrictedStatuses, true) &&
+                in_array($task->priority, ['high', 'critical'], true)
+            ) {
+                return response()->json([
+                    'message' => 'Tasks with High or Critical priority cannot be moved to For Review, Completed or Closed. Lower the priority first.',
+                    'errors' => [
+                        'status' => [
+                            'Tasks with High or Critical priority cannot be moved to For Review, Completed or Closed. Lower the priority first.'
+                        ]
+                    ]
+                ], 422);
             }
 
             if ($task->status === 'closed') {
@@ -182,7 +198,6 @@ class TaskController extends Controller
             $task->load(['team', 'assigned_to', 'created_by', 'closed_by', 'files']);
 
             return response()->json($task);
-
         } catch (\Throwable $e) {
             Log::channel('taskforge')->error('updateTask error: '.$e->getMessage());
 
